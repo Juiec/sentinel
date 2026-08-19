@@ -11,7 +11,7 @@ import type {
   TrainingRuntimeStore,
   TrainingSeriesPoint,
   TrainingStatusResponse,
-} from "../types/runtime";
+} from "../types/runtime.ts";
 
 const ACTIVE_TRAINING_PHASES = new Set<TrainingPhase>([
   "downloading_model",

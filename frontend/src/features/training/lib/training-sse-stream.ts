@@ -2,7 +2,7 @@
 // Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
 import { takeSseFrame } from "../api/sse-framing.ts";
-import type { TrainingProgressPayload } from "../types/runtime";
+import type { TrainingProgressPayload } from "../types/runtime.ts";
 
 export type TrainingProgressEventName =
   | "progress"
