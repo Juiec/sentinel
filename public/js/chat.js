@@ -35,7 +35,14 @@
     });
   }
 
-  function renderText(el, text) {
+  /* Messages store ISO timestamps; format them to locale time for display. */
+function formatTimestamp(iso) {
+  if (!iso || !iso.trim()) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : d.toLocaleTimeString();
+}
+
+function renderText(el, text) {
     el.innerHTML = text && text.trim()
       ? `<div class="markdown-body">${DOMPurify.sanitize(marked.parse(text))}</div>`
       : '<div class="markdown-body"><em>(No text generated)</em></div>';
@@ -79,7 +86,7 @@
     if (timestamp) {
       const ts = document.createElement('span');
       ts.className = 'timestamp';
-      ts.textContent = timestamp;
+      ts.textContent = formatTimestamp(timestamp);
       div.appendChild(ts);
     }
 

@@ -75,7 +75,7 @@ app.post('/chat', limiter, authCheck, async (req, res) => {
     }
 
     const payload = {
-      model: process.env.MODEL || 'unsloth/Qwen3.6-35B-A3B-MTP-GGUF',
+      model: process.env.MODEL || 'unsloth/Qwen3.8-27B-GGUF:UD-IQ2_XXS',
       messages: req.body.messages,
       temperature: parseFloat(req.body.temperature) || 0.7,
       max_tokens: parseInt(req.body.max_tokens) || 2048,

@@ -42,12 +42,16 @@
   function loadMessages() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(function (m) {
-          messages.push(m);
-          Chat.appendMessage(m.role === 'user' ? 'user' : 'ai', m.content, m.thinking || '', m.timestamp || '');
-        });
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(function (m) {
+            messages.push(m);
+            Chat.appendMessage(m.role === 'user' ? 'user' : 'ai', m.content, m.thinking || '', m.timestamp || '');
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to parse stored chat history:', e);
       }
     }
   }
@@ -57,6 +61,11 @@
     document.getElementById('chat').innerHTML = '';
     localStorage.removeItem(STORAGE_KEY);
     emptyState.hidden = false;
+  }
+
+  /* Messages store ISO timestamps; chat.js formats them for display. */
+  function newTimestamp() {
+    return new Date().toISOString();
   }
 
   loadMessages();
@@ -72,12 +81,14 @@
     Api.streamChat(messages, stream.onToken, function (meta) {
       if (meta.type === 'thinking') {
         thinking = meta.text || '';
+      } else if (meta.type === 'error') {
+        stream.div.remove();
+        Chat.appendMessage('ai', '❌ ' + (meta.message || 'Error contacting server'));
       }
     }).then(function () {
       Chat.hideTypingIndicator();
       Chat.setBusy(false);
-      const ts = new Date().toLocaleTimeString();
-      messages.push({ role: 'assistant', content: stream.text(), thinking: thinking, timestamp: ts });
+      messages.push({ role: 'assistant', content: stream.text(), thinking: thinking, timestamp: newTimestamp() });
       Chat.finishStreamBubble(stream, thinking);
       saveMessages();
       Chat.addRegenerateButton(stream.div, function () {
@@ -103,9 +114,8 @@
     const msg = input.value.trim();
     if (!msg) return;
 
-    const ts = new Date().toLocaleTimeString();
-    messages.push({ role: 'user', content: msg, timestamp: ts });
-    Chat.appendMessage('user', msg, '', ts);
+    messages.push({ role: 'user', content: msg, timestamp: newTimestamp() });
+    Chat.appendMessage('user', msg, '', newTimestamp());
     input.value = '';
     Chat.autoExpand();
     emptyState.hidden = true;

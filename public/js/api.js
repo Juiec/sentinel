@@ -1,4 +1,4 @@
-/* api.js — fetch wrapper, SSE streaming reader, AbortController */
+/* api.js â€” fetch wrapper, SSE streaming reader, AbortController */
 (function () {
   'use strict';
 
@@ -22,7 +22,7 @@
   /*
    * Read a Server-Sent-Events stream produced by the server.
    * onToken(text) fires for each token string.
-   * onMeta(obj) fires for metadata messages (e.g. type: 'thinking').
+   * onMeta(obj) fires for metadata messages (e.g. type: 'thinking' / 'error').
    * Returns a Promise that resolves when the stream ends.
    */
   function streamChat(messages, onToken, onMeta) {
@@ -41,45 +41,41 @@
     });
   }
 
-  function readSSE(res, onToken, onMeta) {
-    return new Promise(function (resolve, reject) {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+  /* Parse an SSE response body line by line. */
+  async function readSSE(res, onToken, onMeta) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-      function pump() {
-        return reader.read().then(function (part) {
-          if (part.done) {
-            resolve();
-            return;
+    try {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) return;
+        buffer += decoder.decode(part.value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep the incomplete trailing line for next pass
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (payload === '[DONE]') continue;
+          let data;
+          try {
+            data = JSON.parse(payload);
+          } catch (e) {
+            console.warn('api.js: skipping malformed SSE line', payload, e);
+            continue;
           }
-          buffer += decoder.decode(part.value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-          lines.forEach(function (line) {
-            const trimmed = line.trim();
-            if (trimmed.indexOf('data:') !== 0) return;
-            const payload = trimmed.slice(5).trim();
-            if (payload === '[DONE]') return;
-            try {
-              const data = JSON.parse(payload);
-              if (data.type === 'thinking') {
-                if (onMeta) onMeta(data);
-              } else if (typeof data.token === 'string' && data.token.length > 0) {
-                onToken(data.token);
-              }
-            } catch (e) {
-              /* skip malformed line */
-            }
-          });
-          return pump();
-        }).catch(function (err) {
-          reject(err);
-        });
+          if (data.type === 'thinking' || data.type === 'error') {
+            if (onMeta) onMeta(data);
+          } else if (typeof data.token === 'string' && data.token.length > 0) {
+            onToken(data.token);
+          }
+        }
       }
-
-      return pump();
-    });
+    } finally {
+      reader.cancel().catch(function () {});
+    }
   }
 
   window.Api = {
