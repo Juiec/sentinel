@@ -18,8 +18,24 @@ const openai = new OpenAI({
   baseURL: process.env.API_URL || 'https://api.openai.com/v1',
 });
 
-function safeLog(err) {
+function logApiError(err) {
   console.error('[API Error]', err);
+}
+
+// Only send a JSON error if the response has not already started streaming.
+// Once SSE headers/tokens have been sent, res.status(...).json(...) throws
+// ERR_HTTP_HEADERS_SENT — so guard with res.headersSent and emit an SSE error instead.
+function sendChatError(res, err) {
+  logApiError(err);
+  if (res.headersSent) {
+    res.write(`data: ${JSON.stringify({ type: 'error', message: err.message || 'Failed to reach AI service.' })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    return res.end();
+  }
+  return res.status(502).json({
+    success: false,
+    error: err.message || 'Failed to reach AI service. Check API Key, API_URL, or network connection.'
+  });
 }
 
 // Token check for the /chat endpoint
@@ -38,7 +54,20 @@ const limiter = rateLimit({
   message: { success: false, error: 'Too many requests. Try again in a minute.' }
 });
 
-// Chat API Endpoint — streams tokens to the client with Server-Sent Events
+// Emit the part of `text` that is safe to send now, holding back a trailing slice
+// (the longest suffix that could be the start of THINK_TAG) for the next chunk.
+function flushPending(text, thinkTag) {
+  for (let len = Math.min(text.length, thinkTag.length - 1); len >= 0; len--) {
+    if (text.slice(-len) === thinkTag.slice(0, len)) {
+      return text.slice(0, text.length - len);
+    }
+  }
+  return text;
+}
+
+// Chat API Endpoint — streams tokens to the client with Server-Sent Events.
+// The THINK_TAG marker can be split across stream chunks, so we buffer a trailing
+// slice that might become the tag instead of checking only each chunk's start.
 app.post('/chat', limiter, authCheck, async (req, res) => {
   try {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
@@ -61,33 +90,47 @@ app.post('/chat', limiter, authCheck, async (req, res) => {
     const THINK_TAG = process.env.THINK_TAG || '< think>';
     let thinking = '';
     let inThinking = false;
+    let pending = ''; // trailing slice that could be the start of THINK_TAG
 
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta || {};
       const piece = delta.content || '';
-      if (piece === '') continue;
+      if (!piece) continue;
+
       if (inThinking) {
-        thinking += piece;
+        thinking += pending + piece;
+        pending = '';
         continue;
       }
-      const markerIdx = piece.indexOf(THINK_TAG);
+
+      pending += piece;
+      const markerIdx = pending.indexOf(THINK_TAG);
       if (markerIdx !== -1) {
         inThinking = true;
-        thinking += piece.slice(markerIdx + THINK_TAG.length);
+        const before = pending.slice(0, markerIdx);
+        if (before) res.write(`data: ${JSON.stringify({ token: before })}\n\n`);
+        thinking += pending.slice(markerIdx + THINK_TAG.length);
+        pending = '';
         continue;
       }
-      res.write(`data: ${JSON.stringify({ token: piece })}\n\n`);
+
+      // Emit everything except a trailing slice that could become the tag.
+      const emit = flushPending(pending, THINK_TAG);
+      if (emit) res.write(`data: ${JSON.stringify({ token: emit })}\n\n`);
+      pending = pending.slice(emit.length);
+    }
+
+    // Flush any leftover answer text that is not a partial tag.
+    if (!inThinking && pending) {
+      res.write(`data: ${JSON.stringify({ token: pending })}\n\n`);
+      pending = '';
     }
 
     res.write(`data: ${JSON.stringify({ type: 'thinking', text: thinking })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
-    safeLog(err);
-    res.status(502).json({
-      success: false,
-      error: err.message || 'Failed to reach AI service. Check API Key, API_URL, or network connection.'
-    });
+    sendChatError(res, err);
   }
 });
 
@@ -101,5 +144,9 @@ app.use((req, res) => {
   res.status(404).json({ success: false, error: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Proxy server running on http://localhost:${PORT}`));
+module.exports = app;
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => console.log(`Proxy server running on http://localhost:${PORT}`));
+}
