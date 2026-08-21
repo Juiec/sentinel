@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Attribute-based dark mode (keeps your data-theme toggle) */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* --- Custom CSS that Tailwind cannot replace --- */
+
+.typing-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: bounce 1.4s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Suggestion chips */
+.chip {
+  border: 1px solid var(--color-zinc-300);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  background: transparent;
+  cursor: pointer;
+}
+[data-theme="dark"] .chip {
+  border-color: var(--color-zinc-700);
+}
+.chip:hover {
+  border-color: var(--color-blue-500);
+}
+.chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-blue-500);
+}
+
+/* Code block rendered inside Markdown */
+.code-block pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Keep the Markdown body from collapsing line spacing */
+.markdown-body {
+  word-break: break-word;
+  line-height: 1.5;
+}

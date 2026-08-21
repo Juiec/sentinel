@@ -1,4 +1,4 @@
-/* api.js â€” fetch wrapper, SSE streaming reader, AbortController */
+/* api.js — fetch wrapper, SSE streaming reader, AbortController */
 (function () {
   'use strict';
 
@@ -28,7 +28,7 @@
   function streamChat(messages, onToken, onMeta) {
     return fetch('/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-secret': 'secret-1' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: messages }),
       signal: signal()
     }).then(function (res) {
@@ -73,6 +73,8 @@
             }
           });
           return pump();
+        }).catch(function (err) {
+          reject(err);
         });
       }
 

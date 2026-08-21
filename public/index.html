@@ -3,33 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat UI</title>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <title>AI Chat</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='50%' text-anchor='middle' dominant-baseline='central'>🤖</text></svg>">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/purify.min.js"></script>
 </head>
-<body>
-  <div class="header">
-    <h2>🤖 AI Chat</h2>
-    <button type="button" id="themeToggle">🌙 Dark</button>
-  </div>
-  <div id="emptyState" hidden>
-    <p>Ask your local model anything.</p>
-    <div id="chips">
-      <span class="chip">What is a black hole?</span>
-      <span class="chip">Explain how recursion works.</span>
-      <span class="chip">Give me a haiku about the sea.</span>
+<body class="h-dvh flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+
+  <header class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
+    <h1 class="text-lg font-semibold">AI Chat</h1>
+    <button type="button" id="themeToggle"
+      class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500">
+      🌙 Dark
+    </button>
+  </header>
+
+  <div id="emptyState" class="m-auto text-center">
+    <p class="text-base">Ask your local model anything.</p>
+    <div id="chips" class="mt-3 flex flex-wrap justify-center gap-2">
+      <button type="button" class="chip">What is a black hole?</button>
+      <button type="button" class="chip">Explain how recursion works.</button>
+      <button type="button" class="chip">Give me a haiku about the sea.</button>
     </div>
   </div>
-  <div id="chat"></div>
-  <p id="hint">Enter to send, Shift+Enter for newline.</p>
-  <form id="form" style="display:flex;">
-    <textarea id="msg" placeholder="Ask something..." rows="1" style="flex:1;" required></textarea>
-    <button type="submit">Send</button>
-    <button type="button" id="stopBtn">Stop</button>
-    <button type="button" id="newChat">New Chat</button>
-    <button type="button" id="clear">Clear</button>
+
+  <main id="chat" role="log" aria-live="polite"
+    class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></main>
+
+  <form id="form"
+    class="flex items-end gap-2 border-t border-zinc-200 dark:border-zinc-800 p-3">
+    <textarea id="msg" placeholder="Ask something..." rows="1" required
+      aria-describedby="hint"
+      class="max-h-40 flex-1 resize-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm focus-visible:ring-2 focus-visible:ring-blue-500"></textarea>
+    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">Send</button>
+    <button type="button" id="stopBtn" class="hidden rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-red-500">Stop</button>
+    <button type="button" id="newChat" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-blue-500">New</button>
+    <button type="button" id="clear" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-red-500">Clear</button>
   </form>
+  <p id="hint" class="sr-only">Enter to send, Shift+Enter for newline.</p>
+
   <script src="js/api.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/app.js"></script>
