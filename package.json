@@ -16,14 +16,14 @@
     "node": ">=20"
   },
   "dependencies": {
+    "amqplib": "^0.10.9",
     "cors": "^2.8.6",
     "dompurify": "^3.4.14",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "marked": "^18.0.10",
-    "openai": "^7.4.0",
-    "tailwind": "^2.3.1"
+    "openai": "^7.4.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
