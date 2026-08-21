@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat UI</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="header">
+    <h2>🤖 AI Chat</h2>
+    <button type="button" id="themeToggle">🌙 Dark</button>
+  </div>
+  <div id="emptyState" hidden>
+    <p>Ask your local model anything.</p>
+    <div id="chips">
+      <span class="chip">What is a black hole?</span>
+      <span class="chip">Explain how recursion works.</span>
+      <span class="chip">Give me a haiku about the sea.</span>
+    </div>
+  </div>
+  <div id="chat"></div>
+  <p id="hint">Enter to send, Shift+Enter for newline.</p>
+  <form id="form" style="display:flex;">
+    <textarea id="msg" placeholder="Ask something..." rows="1" style="flex:1;" required></textarea>
+    <button type="submit">Send</button>
+    <button type="button" id="stopBtn">Stop</button>
+    <button type="button" id="newChat">New Chat</button>
+    <button type="button" id="clear">Clear</button>
+  </form>
+  <script src="js/api.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
