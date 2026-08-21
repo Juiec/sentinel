@@ -38,9 +38,9 @@
     class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></main>
 
   <!-- Chat log drawer (opened from the header "Log" button) -->
-  <div id="logBackdrop" class="fixed inset-0 z-10 bg-black/40"></div>
+  <div id="logBackdrop" class="fixed inset-0 z-10 bg-black/40" hidden></div>
   <aside id="chatLogPanel" role="dialog" aria-label="Chat log"
-    class="fixed right-0 top-0 z-20 flex h-full w-full max-w-sm flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+    class="fixed right-0 top-0 z-20 flex h-full w-full max-w-sm flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950" hidden>
     <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
       <h2 class="text-base font-semibold">Chat Log</h2>
       <button type="button" id="logClose" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-red-500">✕ Close</button>

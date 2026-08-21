@@ -11,6 +11,9 @@
   const emptyState = document.getElementById('emptyState');
   const chips = document.getElementById('chips');
   const stopBtn = document.getElementById('stopBtn');
+  const logPanel = document.getElementById('chatLogPanel');
+  const logList = document.getElementById('logList');
+  const logBackdrop = document.getElementById('logBackdrop');
 
   /* Theme: first load from prefers-color-scheme, persist choice */
   function applyTheme(theme) {
@@ -83,7 +86,7 @@
         thinking = meta.text || '';
       } else if (meta.type === 'error') {
         stream.div.remove();
-        Chat.appendMessage('ai', '❌ ' + (meta.message || 'Error contacting server'));
+        Chat.appendMessage('ai', '❌ ' + (meta.message || 'Error contacting server'), '', '', true);
       }
     }).then(function () {
       Chat.hideTypingIndicator();
@@ -103,13 +106,76 @@
       if (err.name === 'AbortError') {
         Chat.appendMessage('ai', 'Stopped.');
       } else {
-        Chat.appendMessage('ai', '❌ ' + (err.message || 'Error contacting server'));
+        Chat.appendMessage('ai', '❌ ' + (err.message || 'Error contacting server'), '', '', true);
         console.error(err);
       }
     });
   }
 
-  form.addEventListener('submit', function (e) {
+  /* ---- Chat log: drawer open/close + export --------------------------- */
+  function buildLogEntries() {
+    return messages.map(function (m) {
+      return { role: m.role, content: m.content || '', thinking: m.thinking || '', timestamp: m.timestamp || '' };
+    });
+  }
+
+  function renderLog() {
+    logList.innerHTML = '';
+    buildLogEntries().forEach(function (m) {
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      const label = document.createElement('span');
+      label.textContent = m.role === 'user' ? 'You' : 'AI';
+      row.appendChild(label);
+      const body = document.createElement('p');
+      body.textContent = m.content || '';
+      row.appendChild(body);
+      if (m.timestamp) {
+        const ts = document.createElement('span');
+        ts.className = 'log-ts';
+        ts.textContent = new Date(m.timestamp).toLocaleString();
+        row.appendChild(ts);
+      }
+      logList.appendChild(row);
+    });
+  }
+
+  function openLog() {
+    renderLog();
+    logPanel.hidden = false;
+    logBackdrop.hidden = false;
+  }
+
+  function closeLog() {
+    logPanel.hidden = true;
+    logBackdrop.hidden = true;
+  }
+
+  function download(filename, text) {
+    const blob = new Blob([text], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function exportLog(format) {
+    if (format === 'json') {
+      download('chat-log.json', JSON.stringify(buildLogEntries(), null, 2));
+    } else {
+      const lines = [];
+      buildLogEntries().forEach(function (m) {
+        lines.push('### ' + (m.role === 'user' ? 'You' : 'AI') + ' — ' + new Date(m.timestamp).toLocaleString());
+        lines.push(m.content);
+        lines.push('');
+      });
+      download('chat-log.md', lines.join('\n'));
+    }
+  }
+
+form.addEventListener('submit', function (e) {
     e.preventDefault();
     const msg = input.value.trim();
     if (!msg) return;
@@ -125,6 +191,22 @@
 
   stopBtn.addEventListener('click', function () {
     Api.stop();
+  });
+
+  /* Log drawer: open/close + export menu */
+  document.getElementById('logBtn').addEventListener('click', openLog);
+  document.getElementById('logClose').addEventListener('click', closeLog);
+  logBackdrop.addEventListener('click', closeLog);
+
+  const exportMenu = document.getElementById('exportMenu');
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    exportMenu.classList.toggle('hidden');
+  });
+  exportMenu.querySelectorAll('[data-format]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      exportLog(btn.getAttribute('data-format'));
+      exportMenu.classList.remove('hidden');
+    });
   });
 
   chips.addEventListener('click', function (e) {

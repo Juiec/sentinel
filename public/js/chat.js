@@ -48,9 +48,14 @@ function renderText(el, text) {
       : '<div class="markdown-body"><em>(No text generated)</em></div>';
   }
 
-  function appendMessage(role, text, reasoning, timestamp) {
+  function appendMessage(role, text, reasoning, timestamp, isError) {
     const div = document.createElement('div');
-    div.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
+    div.className = `msg ${role === 'user' ? 'user' : 'ai'}${isError ? ' error' : ''}`;
+
+    const roleLabel = document.createElement('span');
+    roleLabel.className = 'msg-role';
+    roleLabel.textContent = role === 'user' ? 'You' : 'AI';
+    div.appendChild(roleLabel);
 
     if (role === 'ai') {
       if (reasoning) {
@@ -99,6 +104,10 @@ function renderText(el, text) {
   function startStreamBubble() {
     const div = document.createElement('div');
     div.className = 'msg ai';
+    const roleLabel = document.createElement('span');
+    roleLabel.className = 'msg-role';
+    roleLabel.textContent = 'AI';
+    div.appendChild(roleLabel);
     const ansDiv = document.createElement('div');
     ansDiv.className = 'answer';
     ansDiv.innerHTML = '<div class="markdown-body"></div>';
