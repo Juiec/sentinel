@@ -13,10 +13,16 @@
 
   <header class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
     <h1 class="text-lg font-semibold">AI Chat</h1>
-    <button type="button" id="themeToggle"
+    <div class="flex items-center gap-2">
+      <button type="button" id="logBtn"
+        class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500">
+        Log
+      </button>
+      <button type="button" id="themeToggle"
       class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500">
       🌙 Dark
     </button>
+    </div>
   </header>
 
   <div id="emptyState" class="m-auto text-center">
@@ -31,15 +37,36 @@
   <main id="chat" role="log" aria-live="polite"
     class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></main>
 
-  <form id="form"
-    class="flex items-end gap-2 border-t border-zinc-200 dark:border-zinc-800 p-3">
+  <!-- Chat log drawer (opened from the header "Log" button) -->
+  <div id="logBackdrop" class="fixed inset-0 z-10 bg-black/40"></div>
+  <aside id="chatLogPanel" role="dialog" aria-label="Chat log"
+    class="fixed right-0 top-0 z-20 flex h-full w-full max-w-sm flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+    <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
+      <h2 class="text-base font-semibold">Chat Log</h2>
+      <button type="button" id="logClose" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-red-500">✕ Close</button>
+    </div>
+    <div id="logList" class="flex-1 overflow-y-auto px-4 py-3 space-y-3"></div>
+    <div class="border-t border-zinc-200 dark:border-zinc-800 p-3">
+      <button type="button" id="exportBtn"
+        class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-blue-500">Export</button>
+      <div id="exportMenu" class="hidden mt-2 flex gap-2">
+        <button type="button" data-format="md" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-blue-500">Markdown</button>
+        <button type="button" data-format="json" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:border-blue-500">JSON</button>
+      </div>
+    </div>
+  </aside>
+
+  <form id="form" class="border-t border-zinc-200 dark:border-zinc-800 p-3">
     <textarea id="msg" placeholder="Ask something..." rows="1" required
       aria-describedby="hint"
-      class="max-h-40 flex-1 resize-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm focus-visible:ring-2 focus-visible:ring-blue-500"></textarea>
-    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">Send</button>
-    <button type="button" id="stopBtn" class="hidden rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-red-500">Stop</button>
-    <button type="button" id="newChat" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-blue-500">New</button>
-    <button type="button" id="clear" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-red-500">Clear</button>
+      class="max-h-40 w-full resize-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm focus-visible:ring-2 focus-visible:ring-blue-500"></textarea>
+    <div class="mt-2 flex items-center gap-2">
+      <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">Send</button>
+      <button type="button" id="stopBtn" class="hidden rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-red-500">Stop</button>
+      <div class="flex-1"></div>
+      <button type="button" id="newChat" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-blue-500">New</button>
+      <button type="button" id="clear" class="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:border-red-500">Clear</button>
+    </div>
   </form>
   <p id="hint" class="sr-only">Enter to send, Shift+Enter for newline.</p>
 

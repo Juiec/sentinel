@@ -38,6 +38,15 @@ function sendChatError(res, err) {
   });
 }
 
+// Token check for the /chat endpoint
+function authCheck(req, res, next) {
+  const token = req.headers['x-secret'] || req.query.secret;
+  if (token !== process.env.SECRET) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  next();
+}
+
 // Rate limiter for /chat
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -59,7 +68,7 @@ function flushPending(text, thinkTag) {
 // Chat API Endpoint — streams tokens to the client with Server-Sent Events.
 // The THINK_TAG marker can be split across stream chunks, so we buffer a trailing
 // slice that might become the tag instead of checking only each chunk's start.
-app.post('/chat', limiter, async (req, res) => {
+app.post('/chat', limiter, authCheck, async (req, res) => {
   try {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
       return res.status(400).json({ success: false, error: 'Invalid request format. Expected array of messages.' });
