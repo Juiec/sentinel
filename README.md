@@ -1,61 +1,48 @@
-# AI Chat UI
+# COCO Hard-Negative Images for Bag Detection
 
-AI Chat UI is a local chat app for a model served through an OpenAI-compatible API.
-The server streams answers to the browser with Server-Sent Events.
+Curated set of COCO images that contain **confusable objects** (person / chair / keyboard)
+but contain **no real bag object**, so a bag detector trained on them learns to reject
+people, chairs and keyboards instead of flagging them as bags.
 
-## What the project does
+## Why these are good negatives
+Your dataset is 2952 positive vs 7 negative in train (~421:1). A model trained with that
+ratio will happily box people/chairs/keyboards as "bags". These images give it clean
+examples where the confusable object is present and correctly labeled *nothing*.
 
-- Serves a chat interface on `http://localhost:3001`.
-- Forwards chat messages to the model through a small Express proxy.
-- Streams the model response token-by-token to the client.
-- Saves the conversation in `localStorage` and supports light/dark themes.
+## How they were chosen (deterministic, seed=42)
+From COCO train2017 (IDs already in your `coco_negative_ids.json`), keep images that:
+  - contain at least one of {person, chair, keyboard} with a reasonably large bbox
+    (area >= 4000 px²), AND
+  - contain NO backpack / handbag / suitcase object.
 
-## Set up the local Unsloth model
+Then balanced by confusable type:
+  - 60 with keyboard (the most bag-shaped object)
+  - 40 with person+chair
+  - 30 chair-only
+  - 20 person-only
+= 150 images total, all from COCO train2017 (won't collide with your val split).
 
-1. Install Unsloth on your machine and start the model server.
-2. Note the base URL of the server, for example
-   `https://your-endpoint.trycloudflare.com/v1`.
-3. Note the model name shown by the server, for example
-   `unsloth/Qwen3.6-35B-A3B-MTP-GGUF`.
+## Files
+- coco_negative_selection.json   manifest: id, file_name, url, confusables present
+- download_coco_negatives.py     resumable downloader (skip existing files)
+- images/                        downloaded JPEGs land here
 
-## Set up the `.env`
+## Usage
+    cd negatives_coco
+    python download_coco_negatives.py           # all 150
+    python download_coco_negatives.py --limit 20  # quick test
 
-1. Copy `.env.example` to `.env`.
-2. Fill in each variable:
+## Wiring into your YOLO dataset (merged_bags)
+Negatives need EMPTY label files. Copy images + create empty labels:
 
-   | Variable   | Value |
-   |------------|-------|
-   | `API_KEY`  | The key for your model server. |
-   | `API_URL`  | The base URL of your model server. |
-   | `MODEL`    | The model name shown by the server. |
-   | `PORT`     | The port the app listens on, `3001`. |
-   | `SECRET`   | A secret string for the `/chat` endpoint. |
-   | `THINK_TAG`| The tag the model uses for its thinking block, `< think>`. |
+    for f in $(ls images/*.jpg | sed 's|images/||'); do
+        cp images/$f ../merged_bags/train/images/
+        touch ../merged_bags/train/labels/${f%.jpg}.txt
+    done
 
-Do not commit `.env`. It is already ignored by `.gitignore`.
+(Or better: put them in a `negatives` split and add it to your train list.)
 
-## Run the app
-
-1. Install the dependencies:
-
-   ```
-   npm install
-   ```
-
-2. Start the server:
-
-   ```
-   npm start
-   ```
-
-3. Open `http://localhost:3001` in a browser.
-
-## Use the UI
-
-- Type a message and press Enter to send it.
-- Press Shift+Enter for a newline.
-- The Stop button stops a running answer.
-- The New Chat and Clear buttons clear the conversation.
-- The ðŸŒ™ button switches between light and dark themes.
-- Click a chip to fill the input with a starter question.
-- Click Copy on an answer or a code block to copy its text.
+## Notes
+- COCO license (CC BY 4.0). Attribution required if you publish the model/dataset.
+- If you later want more negatives, bump the group quotas in the selection script —
+  ~49k clean candidates are available.
