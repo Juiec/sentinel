@@ -169,18 +169,25 @@ def collect_negative_sources(neg_root):
     """Yield (image_path, label_path_or_None) from a negatives folder.
 
     Supports:
-      - flat images (labels in neg/labels/ or next to the image)
+      - flat images inside neg/images/ (labels in neg/labels/)   <- e.g. /negatives_coco
       - nested dataset layout (neg/images/<split>/ + neg/labels/<split>/)
       - split-first dataset layout (neg/<split>/images/ + neg/<split>/labels/)
+      - flat images directly under neg/ (labels in neg/labels/ or next to the image)
     """
-    if (neg_root / "images").is_dir():  # nested layout
-        for split_dir in sorted((neg_root / "images").iterdir()):
-            lbl_dir = neg_root / "labels" / split_dir.name
-            for img in sorted(split_dir.iterdir()):
-                if not img.is_file() or img.suffix.lower() not in IMAGE_EXTS:
+    if (neg_root / "images").is_dir():
+        for entry in sorted((neg_root / "images").iterdir()):
+            if entry.is_file():  # flat images inside images/
+                if entry.suffix.lower() not in IMAGE_EXTS:
                     continue
-                lbl = lbl_dir / (img.stem + ".txt")
-                yield img, (lbl if lbl.exists() else None)
+                lbl = neg_root / "labels" / (entry.stem + ".txt")
+                yield entry, (lbl if lbl.exists() else None)
+            elif entry.is_dir():  # nested layout: images/<split>/...
+                lbl_dir = neg_root / "labels" / entry.name
+                for img in sorted(entry.iterdir()):
+                    if not img.is_file() or img.suffix.lower() not in IMAGE_EXTS:
+                        continue
+                    lbl = lbl_dir / (img.stem + ".txt")
+                    yield img, (lbl if lbl.exists() else None)
     elif any(sub.is_dir() and (sub / "images").is_dir() for sub in neg_root.iterdir()):
         # split-first layout
         for split_dir in sorted(neg_root.iterdir()):
@@ -193,7 +200,7 @@ def collect_negative_sources(neg_root):
                     continue
                 lbl = (lbls / (img.stem + ".txt")) if lbls.is_dir() else None
                 yield img, (lbl if lbl and lbl.exists() else None)
-    else:  # flat images
+    else:  # flat images directly under neg root
         for img in sorted(neg_root.iterdir()):
             if not img.is_file() or img.suffix.lower() not in IMAGE_EXTS:
                 continue
