@@ -303,15 +303,29 @@ def merge_datasets(ds_roots, out_root, neg_roots=None, neg_splits=("train",)):
         splits_present.update(neg_splits)
 
     # write merged data.yaml (negatives add NO new classes)
-    lines = ["path: " + str(out_root.resolve())]
-    for split in sorted(splits_present):
-        lines.append(split + ": " + split + "/images")
+    lines = ["path: " + out_root.resolve().as_posix()]
+
+    # Split paths (using images/<split> layout)
+    if "train" in splits_present:
+        lines.append("train: train/images")
+    if "val" in splits_present:
+        lines.append("val: val/images")
+    elif "train" in splits_present:
+        lines.append("val: train/images")  # Fallback to prevent missing validation error
+    if "test" in splits_present:
+        lines.append("test: test/images")
+
+    # Build class ID mapping
     names_final = {}
     for name in merged_names:
         names_final[len(names_final)] = name
+
+    # Add class count (nc) and names mapping
+    lines.append("nc: " + str(len(names_final)))
     lines.append("names:")
     for cid, cname in sorted(names_final.items()):
         lines.append("  " + str(cid) + ": " + cname)
+
     (out_root / "data.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     print("Merged {} dataset(s) into {}".format(len(ds_roots), out_root))
